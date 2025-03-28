@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
+import axios from "axios";
 
 const App = () => {
-  const [persons, setPersons] = useState([
-    { name: 'Arto Hellas', number: '040-123456', id: 1 },
-    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
-    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
-    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
-  ]);
-
-  const [displayedPersons, setDisplayedPersons] = useState(persons);
+  const [persons, setPersons] = useState([]);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewphone] = useState("");
   const [filterText, SetFilterText] = useState("");
+
+  useEffect(()=> { 
+    axios
+    .get('http://localhost:3001/persons')
+    .then((response) => { 
+        console.log("promis fullfilled", response)
+        setPersons(response.data)
+    })
+  }, [])
 
   const addContact = (event) => {
     event.preventDefault();
@@ -26,25 +29,23 @@ const App = () => {
     }
     const newList = persons.concat({ name: newName, number: newPhone });
     setPersons(newList);
-    setDisplayedPersons(newList);
     setNewName("");
     setNewphone("");
   };
 
-  const filterDisplayedPersons = (event) => {
+  const setFilter = (event) => {
     const filterText = event.target.value;
     SetFilterText(filterText);
-    if (filterText.trim() === "") {
-      setDisplayedPersons(persons);
-    } else {
-      setDisplayedPersons(persons.filter((person) => person.name.includes(filterText)));
-    }
   };
+
+  const displayedPersons = persons.filter((person) =>
+    person.name.toLowerCase().includes(filterText.trim().toLowerCase())
+  );
 
   return (
     <div>
       <h2>Phonebook</h2>
-      <Filter filterText={filterText} onFilterChange={filterDisplayedPersons} />
+      <Filter filterText={filterText} onFilterChange={setFilter} />
       <h3>Add a new</h3>
       <PersonForm
         newName={newName}
