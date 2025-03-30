@@ -3,7 +3,7 @@ import React from "react";
 import Filter from "./components/Filter";
 import PersonForm from "./components/PersonForm";
 import Persons from "./components/Persons";
-import axios from "axios";
+import phonebookService from "./services/phonebook"
 
 const App = () => {
   const [persons, setPersons] = useState([]);
@@ -11,24 +11,24 @@ const App = () => {
   const [newPhone, setNewphone] = useState("");
   const [filterText, SetFilterText] = useState("");
 
-  useEffect(()=> { 
-    axios
-    .get('http://localhost:3001/persons')
-    .then((response) => { 
-        console.log("promis fullfilled", response)
-        setPersons(response.data)
-    })
-  }, [])
+  useEffect(()=> { getAll() }, [])
 
   const addContact = (event) => {
     event.preventDefault();
     const exisitingPerson = persons.find((person) => person.name === newName);
-    if (exisitingPerson) {
+    console.log("add contect")
+    if (exisitingPerson && newPhone === exisitingPerson.number) {
+      console.log("exisitingPerson", exisitingPerson)
       alert(`${newName} is already added to phonebook`);
       return;
     }
-    const newList = persons.concat({ name: newName, number: newPhone });
-    setPersons(newList);
+    if(exisitingPerson && newPhone !== exisitingPerson.number && confirm(`${exisitingPerson.name} is already added to phonebook, replace the old number with a new pne?`)) { 
+      console.log("exisitingPerson diff phone numbber", exisitingPerson)
+      let newPeron = {...exisitingPerson, number: newPhone}
+      phonebookService.updateContact(exisitingPerson.id, newPeron).then(( _ => getAll()))
+      return;
+    }
+    phonebookService.createContact({ name: newName, number: newPhone }).then(( _ => getAll()))
     setNewName("");
     setNewphone("");
   };
@@ -37,6 +37,19 @@ const App = () => {
     const filterText = event.target.value;
     SetFilterText(filterText);
   };
+
+  const deletePerson = (id) => { 
+    const person = persons.find((person) => person.id === id)
+    if(confirm(`delete ${person.name}?`))
+      phonebookService.deletePerson(id).then( _ => getAll())
+  }
+
+  const getAll = () => { 
+    phonebookService.getAll().then((response) => {
+      console.log(response);
+      return setPersons(response);
+    })
+  }
 
   const displayedPersons = persons.filter((person) =>
     person.name.toLowerCase().includes(filterText.trim().toLowerCase())
@@ -55,7 +68,7 @@ const App = () => {
         onSubmit={addContact}
       />
       <h3>Numbers</h3>
-      <Persons persons={displayedPersons} />
+      <Persons persons={displayedPersons} onDelete={(id) => deletePerson(id)}/>
     </div>
   );
 };
