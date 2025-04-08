@@ -71,7 +71,7 @@ app.post("/api/persons/", (request, response) => {
     return response.status(400).send({ error: "name must be unique" });
   }
 
-  const id = Math.floor(Math.random() * 10000);
+  const id = Math.floor(Math.random() * 10000).toString(); // Convert ID to string
   const newEntry = {
     number: number,
     name: name,
