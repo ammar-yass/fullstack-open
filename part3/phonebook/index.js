@@ -59,10 +59,10 @@ app.delete("/api/persons/:id", (request, response) => {
 
 app.post("/api/persons/", (request, response) => {
   let body = request.body;
-  let phone = body.phone;
+  let number = body.number;
   let name = body.name;
 
-  if (!phone || !name) {
+  if (!number || !name) {
     return response
       .status(400)
       .send({ error: "bad request missing information" });
@@ -73,7 +73,7 @@ app.post("/api/persons/", (request, response) => {
 
   const id = Math.floor(Math.random() * 10000);
   const newEntry = {
-    phone: phone,
+    number: number,
     name: name,
     id: id,
   };
