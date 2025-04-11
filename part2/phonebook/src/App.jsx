@@ -51,7 +51,8 @@ const App = () => {
       .then((_) => {
         showNotification(`added ${newName}`, true)
         return getAll();
-      });
+      })
+      .catch(error => { showNotification(error.response.data.error)})
     setNewName("");
     setNewphone("");
   };
