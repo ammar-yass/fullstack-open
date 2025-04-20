@@ -1,4 +1,7 @@
+const User = require("../models/user");
 const logger = require("./logger");
+const jwt = require("jsonwebtoken");
+const config = require("../utils/config");
 
 const requestLogger = (request, response, next) => {
   logger.info("Method: ", request.method);
@@ -6,6 +9,23 @@ const requestLogger = (request, response, next) => {
   logger.info("body: ", request.body);
   logger.info("---");
   next();
+};
+
+const tokenExtractor = (request, response, next) => {
+  const authorization = request.get("authorization");
+  if (authorization && authorization.startsWith("Bearer ")) {
+    const token = authorization.replace("Bearer ", "");
+    request.token = token;
+  }
+  next();
+};
+
+const userExtractor = async (request, response, next) => {
+  const id = jwt.verify(request.token, config.SECRET).id;
+  console.log('do we have an id', id)
+  if (id) request.user = await User.findById(id);
+  console.log("user", request.user)
+  next()
 };
 
 const unknownEndpoint = (request, response) => {
@@ -18,9 +38,21 @@ const errorHandler = (error, request, response, next) => {
     return response.status(400).send({ error: "malformatted id" });
   } else if (error.name === "ValidationError") {
     return response.status(400).json({ error: error.message });
+  } else if (
+    error.name === "MongoServerError" &&
+    error.message.includes("E11000 duplicate key error")
+  ) {
+    return response
+      .status(400)
+      .json({ error: "expected `username` to be unique" });
+  } else if (error.name === "JsonWebTokenError") {
+    return response.status(401).json({ error: "Unau" });
+  } else if (error.name === "TokenExpiredError") {
+    return response.status(401).json({
+      error: "token expired",
+    });
   }
-
   next(error);
 };
 
-module.exports = { requestLogger, unknownEndpoint, errorHandler };
+module.exports = { requestLogger, unknownEndpoint, errorHandler, tokenExtractor, userExtractor};
